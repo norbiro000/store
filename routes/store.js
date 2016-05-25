@@ -43,6 +43,7 @@ router.delete('/', function(req, res, next){
 
 // เพิ่มสาร
 router.post('/request', function(req, res, next){
+
 	var connection = mysql.createConnection({
 		host     : 'localhost',
 		user     : 'root',
@@ -58,10 +59,10 @@ router.post('/request', function(req, res, next){
 			if(typeof req.body.che_list !== 'undefined'){
 				var che_list = req.body.che_list;
 				//Insert To request Table
-				connection.query('INSERT INTO request (req_time, user_id) VALUES ("'+Date()+'", "'+user_id+'");', function(err, rows, fields) { if (err) throw err;
+				connection.query('INSERT INTO request (req_time, user_id, state) VALUES ("'+Date()+'", "'+user_id+'", 0);', function(err, rows, fields) { if (err) throw err;
 					for(var i=0;i<che_list.length;i++){
 						//Insert each chemis
-						connection.query('INSERT INTO request_detail (req_id, che_id, amount) VALUES ("'+rows.insertId+'", "'+che_list[i]["che_id"]+'","'+che_list[i]["amount"]+'");', function(err, rows, fields) { if (err) throw err;
+						connection.query('INSERT INTO request_detail (req_id, che_id, amount) VALUES ("'+rows.insertId+'", "'+che_list[i]["id"]+'","'+che_list[i]["amount"]+'");', function(err, rows, fields) { if (err) throw err;
 							
 						});
 					}
@@ -95,6 +96,26 @@ router.get('/request', function(req, res, next){
 
 });
 
+
+// เพิ่มสาร
+router.get('/request/:req_id', function(req, res, next){
+	var connection = mysql.createConnection({
+		host     : 'localhost',
+		user     : 'root',
+		password : 'root',
+		database : 'testChemis',
+		socketPath: '/Applications/MAMP/tmp/mysql/mysql.sock'
+	});
+
+	if(typeof req.params.req_id !== 'undefined'){
+		connection.query('SELECT * FROM request_detail as rd JOIN chemis as c ON rd.che_id = c.id WHERE rd.req_id = "'+req.params.req_id+'"', function(err, rows, fields) { if (err) throw err;
+			res.send(rows);
+		});
+	}
+	connection.end()
+
+});
+
 // เพิ่มสาร
 router.get('/request/approve/:requestID', function(req, res, next){
 	var connection = mysql.createConnection({
@@ -115,13 +136,15 @@ router.get('/request/approve/:requestID', function(req, res, next){
 					});
 				}
 				if(i == rows.length){
-					res.send('')
+					connection.query('UPDATE request SET state=1 WHERE req_id="'+req.params.requestID+'"', function(err, request, fields) { if (err) throw err;
+						res.send('');
+						connection.end()
+					});
 				}
 			});
 		}
-		connection.end()
+		
 	});
-
 });
 
 function asdf(res, chemis, user_id, req_id, done){

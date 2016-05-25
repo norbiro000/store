@@ -33,6 +33,49 @@ router.get('/', function(req, res, next) {
 });
 
 // เพิ่มสาร
+router.post('/request', function(req, res, next){
+
+	var connection = mysql.createConnection({
+		host     : 'localhost',
+		user     : 'root',
+		password : 'root',
+		database : 'testChemis',
+		socketPath: '/Applications/MAMP/tmp/mysql/mysql.sock'
+	});
+
+	if(typeof req.body !== 'undefined'){
+		if(typeof req.body.user_id !== 'undefined'){
+			//User Id
+			var user_id = req.body.user_id;
+			if(typeof req.body.che_list !== 'undefined'){
+				var che_list = req.body.che_list;
+				//Insert To request Table
+				console.dir(che_list)
+				connection.query('INSERT INTO request_compound (req_time, user_id, state) VALUES ("'+Date()+'", "'+user_id+'", 1);', function(err, request, fields) { if (err) throw err;
+					for(var i=0;i<che_list.length;i++){
+						//Insert each chemis
+						connection.query('INSERT INTO request_compound_detail (req_id, che_id, amount) VALUES ("'+request.insertId+'", "'+che_list[i]["che_id"]+'","'+ -che_list[i]["amount"]+'");', function(err, rows, fields) { if (err) throw err;
+							
+						});
+
+						var input2 = {che_id:che_list[i].che_id, amount: -che_list[i].amount ,user_id:user_id, req_id: request.insertId}
+			  			connection.query('INSERT INTO compound_transection SET ?', input2, function(err, result) {
+			  				if (err) console.dir( err );
+			  				
+
+			  			});
+					}
+
+					res.json({status: "Success"});
+					connection.end()
+				});
+			}
+
+		}	
+	}
+});
+
+// เพิ่มสาร
 router.post('/', function(req, res, next){
 
 });
